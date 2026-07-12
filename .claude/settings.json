@@ -1,0 +1,58 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'cmd=$(cat); if echo \"$cmd\" | grep -qiE \"git commit|git push\"; then echo \"[HOOK] Running security scan...\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'cmd=$(cat); if echo \"$cmd\" | grep -qiE \"\\.java|\\.ts\"; then echo \"[HOOK] Check test coverage after code change\"; fi'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'cmd=$(cat); if echo \"$cmd\" | grep -qiE \"DROP TABLE|DROP COLUMN\"; then echo \"[BLOCKED] Destructive DDL detected — use deprecation pattern instead\"; exit 1; fi'"
+          }
+        ]
+      }
+    ]
+  },
+  "agents": {
+    "orchestrator": ".claude/agents/orchestrator.md",
+    "coder": ".claude/agents/coder.md",
+    "testgen": ".claude/agents/testgen.md",
+    "security": ".claude/agents/security.md",
+    "adr-docs": ".claude/agents/adr-docs.md",
+    "migrations": ".claude/agents/migrations.md",
+    "observability": ".claude/agents/observability.md",
+    "spec-agent": ".claude/agents/spec-agent.md"
+  },
+  "skills": {
+    "java-21": ".claude/skills/java-21.md",
+    "spring-boot": ".claude/skills/spring-boot.md",
+    "nextjs-react": ".claude/skills/nextjs-react.md",
+    "kafka-avro": ".claude/skills/kafka-avro.md",
+    "postgresql-jpa": ".claude/skills/postgresql-jpa.md",
+    "testing": ".claude/skills/testing.md"
+  },
+  "commands": {
+    "specify": ".claude/commands/specify.md",
+    "clarify": ".claude/commands/clarify.md",
+    "atomize": ".claude/commands/atomize.md",
+    "security-scan": ".claude/commands/security-scan.md",
+    "test-gap": ".claude/commands/test-gap.md",
+    "adr-check": ".claude/commands/adr-check.md",
+    "migration-validate": ".claude/commands/migration-validate.md",
+    "cost-report": ".claude/commands/cost-report.md"
+  }
+}
