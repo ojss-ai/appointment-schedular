@@ -1,0 +1,44 @@
+# [TASK: ATOM-INFRA-508]
+# Prometheus scrape + alerting configuration for the local/staging stack.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: scheduler
+
+rule_files:
+  - /etc/prometheus/alert-rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  # Spring Boot API. Locally the API runs on the host (not in compose) — scrape
+  # it via host.docker.internal. In ECS/staging this becomes the service DNS
+  # name (e.g. scheduler-api:8080).
+  - job_name: scheduler-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: scheduler-api
+
+  - job_name: notification-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['notification-service:8090']
+        labels:
+          application: scheduler-notification
+
+  - job_name: audit-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['audit-service:8091']
+        labels:
+          application: scheduler-audit
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

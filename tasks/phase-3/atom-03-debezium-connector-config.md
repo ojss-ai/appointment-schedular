@@ -4,7 +4,7 @@ description: Debezium PostgreSQL connector config wiring the outbox table to Kaf
 
 # ATOM-KAFKA-003: Debezium Connector Configuration
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete
 **Feature**: kafka-event-mesh
 **Phase**: 3 (Kafka)
 **Tags**: [KAFKA]

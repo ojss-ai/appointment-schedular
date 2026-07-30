@@ -1,0 +1,27 @@
+# Local development profile — pairs with infra/docker-compose.yml (ATOM-LOCAL-DEV-003).
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/scheduler
+    username: scheduler
+    password: scheduler_dev
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092
+    properties:
+      schema.registry.url: http://localhost:8081
+
+app:
+  jwt:
+    # Dev-only default; production must set JWT_SECRET (>= 32 bytes).
+    secret: ${JWT_SECRET:dev-secret-change-in-production-must-be-at-least-256-bits}
+    expiry-hours: 24
+
+logging:
+  level:
+    com.scheduler.api: DEBUG

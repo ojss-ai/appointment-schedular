@@ -1,0 +1,24 @@
+{
+  "type": "record",
+  "name": "BookingLifecycleEvent",
+  "namespace": "io.scheduler.events",
+  "doc": "Emitted on every booking state transition (topic tenant.bookings.lifecycle). Consumed by notification-service and audit-service. TASK: ATOM-KAFKA-005; fields per docs/KAFKA-SPEC.md 3.1.",
+  "fields": [
+    { "name": "eventId",        "type": "string",        "doc": "UUID of this event" },
+    { "name": "eventType",      "type": "string",        "doc": "BookingHeld | BookingConfirmed | BookingCancelled | BookingCompleted | BookingExpired" },
+    { "name": "eventVersion",   "type": "int",           "default": 1 },
+    { "name": "occurredAt",     "type": "string",        "doc": "ISO 8601 UTC timestamp" },
+    { "name": "tenantId",       "type": "string" },
+    { "name": "bookingId",      "type": "string" },
+    { "name": "userId",         "type": "string" },
+    { "name": "resourceId",     "type": "string" },
+    { "name": "locationId",     "type": "string" },
+    { "name": "serviceTypeId",  "type": "string" },
+    { "name": "slotStart",      "type": "string",        "doc": "ISO 8601 UTC" },
+    { "name": "slotEnd",        "type": "string",        "doc": "ISO 8601 UTC" },
+    { "name": "previousStatus", "type": ["null","string"], "default": null },
+    { "name": "newStatus",      "type": "string" },
+    { "name": "ipAddress",      "type": ["null","string"], "default": null },
+    { "name": "metadata",       "type": { "type": "map", "values": "string" }, "default": {} }
+  ]
+}

@@ -1,0 +1,43 @@
+# TASK: ATOM-KAFKA-009 — audit_writer datasource + consumer config
+# per docs/KAFKA-SPEC.md section 7
+server:
+  port: 8091
+
+spring:
+  application:
+    name: audit-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/scheduler}
+    # audit_writer role: INSERT-only on audit_log (grant + RLS, V014) —
+    # never the main scheduler user.
+    username: ${AUDIT_DB_USER:audit_writer}
+    password: ${AUDIT_DB_PASSWORD:audit_writer_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # schema owned by apps/api Flyway — never create/update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: audit-consumers
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      properties:
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+        specific.avro.reader: true
+    # Producer used ONLY by the DeadLetterPublishingRecoverer (DLQ routing)
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+
+logging:
+  pattern:
+    console: '{"time":"%d{ISO8601}","level":"%p","logger":"%logger{36}","msg":"%replace(%msg){''"'',''\\"''}"}%n'

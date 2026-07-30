@@ -1,0 +1,47 @@
+# [TASK: ATOM-INFRA-508]
+# Alertmanager -> Slack routing. The Slack webhook URL is NEVER committed here:
+# it is injected at runtime from AWS Secrets Manager (scheduler/prod/slack-webhook-url)
+# via the SLACK_WEBHOOK_URL environment variable (Alertmanager expands
+# ${SLACK_WEBHOOK_URL} through the docker-compose `env` / entrypoint templating,
+# or an init container writes this file from the secret in ECS).
+#
+# CRITICAL  -> #alerts-critical (PagerDuty/Slack)
+# WARNING   -> #alerts (Slack only)
+route:
+  receiver: slack-warning
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers:
+        - severity = "critical"
+      receiver: slack-critical
+      group_wait: 10s
+      continue: false
+
+receivers:
+  - name: slack-critical
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_URL}
+        channel: '#alerts-critical'
+        send_resolved: true
+        title: '[CRITICAL] {{ .CommonAnnotations.summary }}'
+        text: >-
+          {{ range .Alerts }}*{{ .Labels.alertname }}* — {{ .Annotations.description }}
+          {{ end }}
+
+  - name: slack-warning
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_URL}
+        channel: '#alerts'
+        send_resolved: true
+        title: '[WARNING] {{ .CommonAnnotations.summary }}'
+        text: >-
+          {{ range .Alerts }}*{{ .Labels.alertname }}* — {{ .Annotations.description }}
+          {{ end }}
+
+inhibit_rules:
+  - source_matchers: [severity = "critical"]
+    target_matchers: [severity = "warning"]
+    equal: ['alertname']

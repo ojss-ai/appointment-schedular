@@ -1,0 +1,54 @@
+# [TASK: ATOM-INFRA-508]
+# Prometheus alerting rules. Validate: promtool check rules alert-rules.yml
+groups:
+  - name: scheduler-alerts
+    rules:
+      # p99 slot calc latency > 250ms sustained 5m — early warning, 50ms below
+      # the NFR-1.2 300ms SLO. Bucket metric comes from @Timed(histogram=true).
+      - alert: SlotCalcHighLatency
+        expr: histogram_quantile(0.99, sum by (le) (rate(scheduling_slot_calc_duration_seconds_bucket[5m]))) > 0.25
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Slot calculation p99 > 250ms"
+          description: "Slot availability p99 latency has exceeded 250ms for 5m (NFR-1.2 SLO is 300ms). Consider enabling ATOM-PERF-503 cache warm-up."
+
+      - alert: PendingHoldAccumulation
+        expr: scheduling_pending_hold_active > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PENDING_HOLD accumulation > 100"
+          description: "Active PENDING_HOLD count exceeds 100 — possible abandoned-hold surge or GC lag."
+
+      - alert: KafkaConsumerLag
+        expr: scheduling_kafka_consumer_lag > 1000
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka consumer lag > 1000"
+          description: "A consumer group is lagging by more than 1000 messages for 3m."
+
+      # Any DLQ message is always actionable — fire immediately (for: 0m).
+      - alert: DLQMessageDetected
+        expr: scheduling_dlq_depth > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Messages in DLQ — immediate investigation required"
+          description: "The dead-letter queue depth is non-zero. Consumer processing has failed."
+
+      - alert: OTPFailureRateHigh
+        expr: |
+          rate(scheduling_otp_dispatch_total{status="failure"}[10m])
+            / rate(scheduling_otp_dispatch_total[10m]) > 0.05
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "OTP dispatch failure rate > 5%"
+          description: "More than 5% of OTP dispatch attempts failed over the last 10m."

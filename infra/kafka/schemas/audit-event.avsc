@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "AuditEvent",
+  "namespace": "io.scheduler.events",
+  "doc": "Immutable compliance record (topic tenant.audit.events, compatibility FULL). TASK: ATOM-KAFKA-005; fields per docs/KAFKA-SPEC.md 3.3.",
+  "fields": [
+    { "name": "auditId",        "type": "string" },
+    { "name": "tenantId",       "type": "string" },
+    { "name": "bookingId",      "type": "string" },
+    { "name": "resourceId",     "type": ["null","string"], "default": null },
+    { "name": "userId",         "type": "string",  "doc": "Who performed the action" },
+    { "name": "eventType",      "type": "string" },
+    { "name": "previousStatus", "type": ["null","string"], "default": null },
+    { "name": "newStatus",      "type": "string" },
+    { "name": "ipAddress",      "type": ["null","string"], "default": null },
+    { "name": "userAgent",      "type": ["null","string"], "default": null },
+    { "name": "occurredAt",     "type": "string" },
+    { "name": "metadata",       "type": { "type": "map", "values": "string" }, "default": {} }
+  ]
+}

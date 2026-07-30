@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TASK: ATOM-UI-014 / ATOM-UI-016
+   Styling for react-jsonschema-form output (checkout + builder preview).
+   Tailwind preflight strips default form styles, so restore usable ones
+   scoped under .rjsf-panel. */
+.rjsf-panel fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.rjsf-panel legend {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.rjsf-panel .form-group,
+.rjsf-panel .field {
+  margin-bottom: 0.75rem;
+}
+
+.rjsf-panel label,
+.rjsf-panel .control-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.rjsf-panel input[type='text'],
+.rjsf-panel input[type='number'],
+.rjsf-panel input[type='date'],
+.rjsf-panel input[type='email'],
+.rjsf-panel textarea,
+.rjsf-panel select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: #ffffff;
+}
+
+.rjsf-panel input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.rjsf-panel .checkbox label {
+  display: flex;
+  align-items: center;
+  font-weight: 400;
+}
+
+.rjsf-panel .field-description {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.rjsf-panel .text-danger,
+.rjsf-panel .error-detail {
+  color: #dc2626;
+  font-size: 0.75rem;
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.25rem;
+}
+
+.rjsf-panel .panel.errors,
+.rjsf-panel .panel-danger {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  color: #b91c1c;
+}
+
+.rjsf-panel .required {
+  color: #dc2626;
+  margin-left: 0.125rem;
+}

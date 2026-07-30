@@ -1,0 +1,47 @@
+# TASK: ATOM-KAFKA-007 — consumer config per docs/KAFKA-SPEC.md section 7
+server:
+  port: 8090
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/scheduler}
+    username: ${DB_USER:scheduler}
+    password: ${DB_PASSWORD:scheduler_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # schema owned by apps/api Flyway — never create/update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: notification-consumers
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      properties:
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+        specific.avro.reader: true
+    # Producer used ONLY by the DeadLetterPublishingRecoverer (DLQ routing)
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+
+app:
+  dispatch:
+    ses-from-address: ${SES_FROM_ADDRESS:no-reply@scheduler.local}
+    twilio-from-number: ${TWILIO_FROM_NUMBER:+15005550006}
+  # Credentials via env only: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY /
+  # AWS_REGION, TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN
+
+logging:
+  pattern:
+    console: '{"time":"%d{ISO8601}","level":"%p","logger":"%logger{36}","msg":"%replace(%msg){''"'',''\\"''}"}%n'

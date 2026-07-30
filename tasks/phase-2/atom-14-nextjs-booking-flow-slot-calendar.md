@@ -1,6 +1,6 @@
 # ATOM-UI-014: Next.js Booking Flow — Slot Calendar and Checkout
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete (2026-07-20)
 **Feature**: booking-ui
 **Phase**: 2 (Core)
 **Tags**: [UI]
@@ -30,29 +30,29 @@ So that I can book an appointment without any page reload or lost progress
 
 ## Acceptance Criteria
 
-- [ ] **AC-01**: Slot calendar renders available slots grouped by day for the current 7-day window; empty days are shown as "No availability"
-- [ ] **AC-02**: Slot selection calls `createHold`; if the hold fails (409), an inline error message is shown without a page reload
-- [ ] **AC-03**: The customer intake form renders correctly from `serviceType.intakeSchema` via `react-jsonschema-form`
-- [ ] **AC-04**: Hold countdown timer is visible during checkout; when it reaches zero, the UI shows "Session expired — please select a new slot" and returns to the calendar
-- [ ] **AC-05**: Successful confirmation redirects to `/booking/confirmation/{bookingId}`
-- [ ] **AC-06**: Confirmation page shows the confirmation code, slot date/time, and resource name
-- [ ] **AC-07**: Slot calendar auto-refreshes (TanStack Query `staleTime: 30_000`) when the user navigates to a new week
-- [ ] **AC-08 (Tenant isolation)**: All API calls include the `tenantId` in the URL path — no cross-tenant data is requested
-- [ ] **AC-09 (Domain abstraction)**: No industry-specific terms in any component name, prop name, or API path parameter in this package
+- [x] **AC-01**: Slot calendar renders available slots grouped by day for the current 7-day window; empty days are shown as "No availability"
+- [x] **AC-02**: Slot selection calls `createHold`; if the hold fails (409), an inline error message is shown without a page reload
+- [x] **AC-03**: The customer intake form renders correctly from `serviceType.intakeSchema` via `react-jsonschema-form`
+- [x] **AC-04**: Hold countdown timer is visible during checkout; when it reaches zero, the UI shows "Session expired — please select a new slot" and returns to the calendar
+- [x] **AC-05**: Successful confirmation redirects to `/booking/confirmation/{bookingId}`
+- [x] **AC-06**: Confirmation page shows the confirmation code, slot date/time, and resource name
+- [x] **AC-07**: Slot calendar auto-refreshes (TanStack Query `staleTime: 30_000` + 30s polling) when the user navigates to a new week
+- [x] **AC-08 (Tenant isolation)**: All API calls include the `tenantId` in the URL path — no cross-tenant data is requested
+- [x] **AC-09 (Domain abstraction)**: No industry-specific terms in any component name, prop name, or API path parameter in this package
 
 **Verification Mapping**:
 
 | Criterion | Test Location | Code Location | Status |
 |-----------|---------------|---------------|--------|
-| AC-01 | TBD | TBD | 🔜 Planned |
-| AC-02 | TBD | TBD | 🔜 Planned |
-| AC-03 | TBD | TBD | 🔜 Planned |
-| AC-04 | TBD | TBD | 🔜 Planned |
-| AC-05 | TBD | TBD | 🔜 Planned |
-| AC-06 | TBD | TBD | 🔜 Planned |
-| AC-07 | TBD | TBD | 🔜 Planned |
-| AC-08 | TBD | TBD | 🔜 Planned |
-| AC-09 | TBD | TBD | 🔜 Planned |
+| AC-01 | E2E deferred (needs running backend) | `src/components/booking/SlotCalendar.tsx`, `DayColumn.tsx` | ✅ Implemented |
+| AC-02 | E2E deferred (needs running backend) | `src/components/booking/BookingFlow.tsx` (`handleSlotSelect`), `src/lib/booking-actions.ts` (`createHold`) | ✅ Implemented |
+| AC-03 | E2E deferred (needs running backend) | `src/components/booking/CheckoutForm.tsx` (@rjsf/core + validator-ajv8) | ✅ Implemented |
+| AC-04 | E2E deferred (needs running backend) | `src/components/booking/HoldCountdown.tsx`, `BookingFlow.tsx` (`handleHoldExpired`) | ✅ Implemented |
+| AC-05 | E2E deferred (needs running backend) | `src/components/booking/BookingFlow.tsx` (`router.push('/booking/confirmation/…')`) | ✅ Implemented |
+| AC-06 | E2E deferred (needs running backend) | `src/app/booking/confirmation/[bookingId]/page.tsx` | ✅ Implemented |
+| AC-07 | E2E deferred (needs running backend) | `src/components/booking/SlotCalendar.tsx` (queryKey includes week start; `staleTime`/`refetchInterval` 30s) | ✅ Implemented |
+| AC-08 | Grep audit (no client-supplied tenantId) | `src/lib/session.ts` (`requireSession`), `src/lib/booking-actions.ts`, `src/lib/api-client.ts` | ✅ Implemented |
+| AC-09 | Grep audit (no industry terms) | Entire `src/components/booking/` + `src/app/booking/` packages | ✅ Verified |
 
 <!-- AC validation passed: YYYY-MM-DD, 9 criteria rewritten, 9 marked TBD -->
 
@@ -363,4 +363,14 @@ export function HoldCountdown({ holdExpiresAt, onExpired }: {
 
 ---
 
-*Last updated: 2026-06-18 | Feature: booking-ui | Phase: 2*
+## Implementation Notes (2026-07-20)
+
+- Routes implemented under an explicit `/booking` URL prefix (`src/app/booking/[tenantSlug]/…`) instead of a root-level `(booking)` route group: a root dynamic `[tenantSlug]` segment would shadow `/dashboard`, `/bookings`, etc., and AC-05 already mandates the `/booking/confirmation/{bookingId}` URL.
+- Server actions derive `tenantId` from the session JWT internally rather than taking it as a parameter — strictly stronger tenant isolation than the sketched signatures.
+- Slot fetching runs through the `fetchSlots` server action (which calls `lib/api-client.ts`) so the JWT cookie and API base URL never reach the browser; TanStack Query polls it every 30s.
+- Added `/bookings` (list + cancel with inline confirmation) to cover the cancellation requirement.
+- E2E/Playwright specs deferred until the Phase 2 backend endpoints are runnable; serializer-level unit tests live in `src/lib/schema-serializer.test.ts` (ATOM-UI-016).
+
+---
+
+*Last updated: 2026-07-20 | Feature: booking-ui | Phase: 2*

@@ -13,6 +13,15 @@
             "command": "bash -c 'cmd=$(cat); if echo \"$cmd\" | grep -qiE \"\\.java|\\.ts\"; then echo \"[HOOK] Check test coverage after code change\"; fi'"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'input=$(cat); if echo \"$input\" | grep -qE \"@KafkaListener|@Cacheable|SlotCalculatorService|BookingService|db/migration/V[0-9]+__|<dependency>\"; then echo \"[HOOK] Architectural trigger pattern detected \u2014 run /adr-check to generate an ADR stub (status Proposed) before merging\"; fi'"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -21,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'cmd=$(cat); if echo \"$cmd\" | grep -qiE \"DROP TABLE|DROP COLUMN\"; then echo \"[BLOCKED] Destructive DDL detected — use deprecation pattern instead\"; exit 1; fi'"
+            "command": "bash -c 'cmd=$(cat); if echo \"$cmd\" | grep -qiE \"DROP TABLE|DROP COLUMN\"; then echo \"[BLOCKED] Destructive DDL detected \u2014 use deprecation pattern instead\"; exit 1; fi'"
           }
         ]
       }

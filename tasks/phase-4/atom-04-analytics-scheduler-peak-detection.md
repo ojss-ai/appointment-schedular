@@ -4,7 +4,7 @@ description: Atom design document for scheduled peak booking window and anomaly 
 
 # ATOM-ANALYTICS-004: Analytics Scheduler — Peak Booking Detection and Anomaly Alerts
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete (2026-07-20 — gauge registered once via @PostConstruct and updated every run (returns to 0 so alerts auto-resolve); shared AnalyticsFileWriter extracted; optional admin UI badge deferred — no anomalies endpoint exists yet)
 **Feature**: analytics-peak-detection
 **Phase**: 4 (Intelligence)
 **Tags**: [ANALYTICS]

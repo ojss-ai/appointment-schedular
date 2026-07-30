@@ -4,7 +4,7 @@ description: Atom design document for booking analytics nightly memory ingestion
 
 # ATOM-ANALYTICS-001: Booking Analytics Nightly Memory Ingestion
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete (2026-07-20 — migration renumbered to V015; query adapted to actual audit_log columns event_type/occurred_at; service_type_id resolved via tenant-filtered bookings join; package com.scheduler.api.analytics)
 **Feature**: analytics-memory-ingestion
 **Phase**: 4 (Intelligence)
 **Tags**: [ANALYTICS]

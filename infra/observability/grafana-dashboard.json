@@ -1,0 +1,167 @@
+{
+  "__comment": "[TASK: ATOM-INFRA-508] Scheduler production observability — 7 panels. Import into Grafana; select a Prometheus datasource for ${DS_PROMETHEUS}.",
+  "title": "Scheduler — Production Observability",
+  "uid": "scheduler-prod-obs",
+  "tags": ["scheduler", "production"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "label": "Prometheus",
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Slot calculation latency (p50/p95/p99)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(scheduling_slot_calc_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(scheduling_slot_calc_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(scheduling_slot_calc_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99"
+        }
+      ],
+      "thresholds": {
+        "steps": [
+          { "color": "green", "value": null },
+          { "color": "red", "value": 0.3 }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "title": "Active PENDING_HOLD per tenant",
+      "type": "barchart",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "scheduling_pending_hold_active",
+          "legendFormat": "{{tenant}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Kafka consumer lag per group",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "scheduling_kafka_consumer_lag",
+          "legendFormat": "{{group}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "OTP dispatch success/failure rate by channel",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (channel, status) (rate(scheduling_otp_dispatch_total[5m]))",
+          "legendFormat": "{{channel}} — {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Booking confirmation rate (per hour)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(scheduling_booking_confirmed_total[1h])) * 3600",
+          "legendFormat": "confirmations/hour"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "DLQ depth (must be 0)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(scheduling_dlq_depth)",
+          "legendFormat": "DLQ depth"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "DB connection pool utilisation",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.8 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(hikaricp_connections_active) / sum(hikaricp_connections_max)",
+          "legendFormat": "pool utilisation"
+        }
+      ]
+    }
+  ]
+}

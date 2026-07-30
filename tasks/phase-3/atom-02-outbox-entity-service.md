@@ -4,7 +4,7 @@ description: OutboxEntity JPA mapping and OutboxService with Propagation.MANDATO
 
 # ATOM-KAFKA-002: Outbox Entity and OutboxService
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete
 **Feature**: kafka-event-mesh
 **Phase**: 3 (Kafka)
 **Tags**: [KAFKA]

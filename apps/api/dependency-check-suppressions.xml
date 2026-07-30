@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [TASK: ATOM-SEC-504] OWASP dependency-check false-positive suppressions.
+     Every entry MUST carry a <notes> justification and a review date. CRITICAL
+     (CVSS >= 7) suppressions require security-team sign-off recorded in
+     docs/SECURITY-FINDINGS.md. Empty by default: zero suppressed CVEs. -->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <!-- Example (do not enable without sign-off):
+  <suppress>
+    <notes>Reviewed 2026-07-20 — not reachable; test-only path. Owner: security agent.</notes>
+    <cve>CVE-0000-00000</cve>
+  </suppress>
+  -->
+</suppressions>

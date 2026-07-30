@@ -1,0 +1,8 @@
+# Local developer overrides. Compose merges this automatically with
+# docker-compose.yml when both live in the working directory.
+# Add machine-specific tweaks here (extra ports, debug env, resource limits).
+services:
+  postgres:
+    environment:
+      # Verbose logging helps when debugging Flyway migrations locally.
+      POSTGRES_INITDB_ARGS: "--data-checksums"

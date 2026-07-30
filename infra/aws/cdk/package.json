@@ -1,0 +1,27 @@
+{
+  "name": "scheduler-infra-cdk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production AWS infrastructure (CDK, TypeScript) for the Multi-Tenant Scheduling Framework (ATOM-INFRA-506)",
+  "bin": {
+    "scheduler-infra": "bin/app.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy --all --require-approval broadening",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "aws-cdk": "^2.160.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.160.0",
+    "constructs": "^10.4.2"
+  }
+}

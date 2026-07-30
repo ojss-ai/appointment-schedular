@@ -4,7 +4,7 @@ description: Atom design document for the auto ADR generation hook and extended 
 
 # ATOM-ADR-005: Auto ADR Generation Hook for Architectural Changes
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete (2026-07-20 — triggers/cross-reference/stub template appended to /adr-check; adr-docs agent updated; PostToolUse Edit|Write hook added to .claude/settings.json; CI reminder deferred to P5-T07 — .github/workflows/ci.yml does not exist yet)
 **Feature**: auto-adr-generation
 **Phase**: 4 (Intelligence)
 **Tags**: [ADR]

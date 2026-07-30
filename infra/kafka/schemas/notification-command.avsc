@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "NotificationCommand",
+  "namespace": "io.scheduler.events",
+  "doc": "Dispatch instruction (topic tenant.notifications.outbound). TASK: ATOM-KAFKA-005; fields per docs/KAFKA-SPEC.md 3.2.",
+  "fields": [
+    { "name": "commandId",      "type": "string" },
+    { "name": "commandType",    "type": "string",  "doc": "SEND_CONFIRMATION | SEND_CANCELLATION | SEND_REMINDER" },
+    { "name": "tenantId",       "type": "string" },
+    { "name": "bookingId",      "type": "string" },
+    { "name": "recipientEmail", "type": ["null","string"], "default": null },
+    { "name": "recipientPhone", "type": ["null","string"], "default": null },
+    { "name": "channel",        "type": "string",  "doc": "EMAIL | SMS | BOTH" },
+    { "name": "templateData",   "type": { "type": "map", "values": "string" }, "default": {} },
+    { "name": "createdAt",      "type": "string" }
+  ]
+}

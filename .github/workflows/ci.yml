@@ -1,0 +1,196 @@
+# [TASK: ATOM-INFRA-507]
+# CI/CD pipeline — quality gates on every push/PR; staging auto-deploy on main;
+# production behind a GitHub Environment manual-approval gate. Merge-blocking
+# gates (zero tolerance): CRITICAL CVE, coverage < 80% on service classes,
+# tenant-isolation test failure, concurrency test failure.
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# OIDC role assumption for AWS — no long-lived access keys as GitHub secrets.
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+
+jobs:
+  # ---- Blocking quality gates (API) ------------------------------------
+  quality-gates:
+    name: Quality gates (api)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: scheduler_test
+          POSTGRES_USER: scheduler
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U scheduler"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      JWT_SECRET: ci-pipeline-secret-key-32-bytes-minimum!!
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # Security gate — BLOCKS on CVSS >= 7.
+      - name: Dependency CVE scan (Java)
+        run: cd apps/api && mvn -B org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+      # Build
+      - name: Compile API
+        run: cd apps/api && mvn -B compile
+
+      # Tests
+      - name: Unit tests
+        run: cd apps/api && mvn -B test
+      - name: Integration + concurrency + isolation tests (verify + coverage gate)
+        # `verify` runs failsafe *IT tests (incl. TenantIsolationPenTestIT and
+        # *ConcurrencyIT) and the JaCoCo coverage-check (>= 80% on services).
+        run: cd apps/api && mvn -B verify
+      - name: Tenant isolation gate (explicit, merge-blocking)
+        run: cd apps/api && mvn -B test-compile failsafe:integration-test failsafe:verify -Dit.test=TenantIsolationPenTestIT
+      - name: Concurrency gate (explicit, merge-blocking)
+        run: cd apps/api && mvn -B test -Dtest='*ConcurrencyIT'
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: apps/api/target/site/jacoco/
+
+      - name: Test gap advisory (non-blocking)
+        run: echo "Run /test-gap in a Claude Code session to review coverage gaps (advisory)."
+
+  # ---- Kafka consumer services (matrix) --------------------------------
+  services:
+    name: Build & test (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [notification-service, audit-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Dependency CVE scan (Java)
+        run: cd services/${{ matrix.service }} && mvn -B org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      - name: Compile
+        run: cd services/${{ matrix.service }} && mvn -B compile
+      - name: Test
+        run: cd services/${{ matrix.service }} && mvn -B test
+
+  # ---- Web (Next.js) ---------------------------------------------------
+  web:
+    name: Build & test (web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Dependency CVE scan (Node)
+        run: cd apps/web && npm audit --audit-level=high
+      - name: Typecheck
+        run: cd apps/web && pnpm typecheck
+      - name: Build
+        run: cd apps/web && pnpm build
+      - name: Unit tests
+        run: cd apps/web && pnpm test
+      - name: E2E tests (Playwright)
+        run: cd apps/web && pnpm exec playwright install --with-deps && pnpm test:e2e
+
+  # ---- Staging auto-deploy (main only) ---------------------------------
+  deploy-staging:
+    name: Deploy to staging
+    needs: [quality-gates, services, web]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Login to ECR
+        run: aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+      - name: Build & push images (multi-stage; no secrets in layers)
+        run: |
+          for svc in api:apps/api notification:services/notification-service audit:services/audit-service; do
+            name="${svc%%:*}"; path="${svc##*:}"
+            docker build -t "$ECR_REGISTRY/scheduler-$name:$GITHUB_SHA" "$path"
+            docker push "$ECR_REGISTRY/scheduler-$name:$GITHUB_SHA"
+          done
+      - name: Deploy to ECS staging
+        run: |
+          aws ecs update-service --cluster scheduler-staging --service scheduler-api --force-new-deployment
+          aws ecs update-service --cluster scheduler-staging --service scheduler-notification --force-new-deployment
+          aws ecs update-service --cluster scheduler-staging --service scheduler-audit --force-new-deployment
+      - name: Smoke test
+        run: |
+          sleep 30
+          curl -f https://staging.api.scheduler.io/actuator/health
+
+  # ---- Production (manual approval via GitHub Environment) -------------
+  deploy-production:
+    name: Deploy to production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production   # required reviewers configured in repo settings
+    timeout-minutes: 15
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy to ECS production
+        run: |
+          aws ecs update-service --cluster scheduler --service scheduler-api --force-new-deployment
+          aws ecs update-service --cluster scheduler --service scheduler-notification --force-new-deployment
+          aws ecs update-service --cluster scheduler --service scheduler-audit --force-new-deployment
+      - name: Production smoke test
+        run: curl -f https://api.scheduler.io/actuator/health

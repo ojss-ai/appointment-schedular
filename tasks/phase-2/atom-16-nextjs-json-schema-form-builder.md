@@ -1,6 +1,6 @@
 # ATOM-UI-016: Next.js JSON Schema Form Builder
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete (2026-07-20)
 **Feature**: admin-ui
 **Phase**: 2 (Core)
 **Tags**: [UI]
@@ -30,29 +30,29 @@ So that I can customize the data collected at booking time without writing JSON 
 
 ## Acceptance Criteria
 
-- [ ] **AC-01**: Admin can add, reorder (drag), and remove field definitions in the builder UI
-- [ ] **AC-02**: The live preview panel updates in real time as fields are added, removed, or reordered — no save required
-- [ ] **AC-03**: The serialized schema validates as JSON Schema draft-07 (enforced server-side on save via `InvalidIntakeSchemaException`)
-- [ ] **AC-04**: The saved schema is immediately usable by the customer booking form — `react-jsonschema-form` renders it correctly
-- [ ] **AC-05**: The auto-generated `key` for a field is camelCase derived from the label (e.g., "Chief Complaint" → "chiefComplaint")
-- [ ] **AC-06**: The Select field type supports adding, editing, and removing enum options via inline inputs
-- [ ] **AC-07**: The required toggle correctly sets the `required` array in the output JSON Schema
-- [ ] **AC-08 (Tenant isolation)**: The save action calls `PUT .../tenants/{tenantId}/service-types/{id}` with the `tenantId` from the authenticated session — no tenant ID is accepted from the form
-- [ ] **AC-09 (Domain abstraction)**: No industry-specific terms in any component name, field type label, or variable name in this package
+- [x] **AC-01**: Admin can add, reorder (drag), and remove field definitions in the builder UI
+- [x] **AC-02**: The live preview panel updates in real time as fields are added, removed, or reordered — no save required
+- [x] **AC-03**: The serialized schema validates as JSON Schema draft-07 (enforced server-side on save via `InvalidIntakeSchemaException`)
+- [x] **AC-04**: The saved schema is immediately usable by the customer booking form — `react-jsonschema-form` renders it correctly
+- [x] **AC-05**: The auto-generated `key` for a field is camelCase derived from the label (e.g., "Chief Complaint" → "chiefComplaint")
+- [x] **AC-06**: The Select field type supports adding, editing, and removing enum options via inline inputs
+- [x] **AC-07**: The required toggle correctly sets the `required` array in the output JSON Schema
+- [x] **AC-08 (Tenant isolation)**: The save action calls `PUT .../tenants/{tenantId}/service-types/{id}` with the `tenantId` from the authenticated session — no tenant ID is accepted from the form
+- [x] **AC-09 (Domain abstraction)**: No industry-specific terms in any component name, field type label, or variable name in this package
 
 **Verification Mapping**:
 
 | Criterion | Test Location | Code Location | Status |
 |-----------|---------------|---------------|--------|
-| AC-01 | TBD | TBD | 🔜 Planned |
-| AC-02 | TBD | TBD | 🔜 Planned |
-| AC-03 | TBD | TBD | 🔜 Planned |
-| AC-04 | TBD | TBD | 🔜 Planned |
-| AC-05 | TBD | TBD | 🔜 Planned |
-| AC-06 | TBD | TBD | 🔜 Planned |
-| AC-07 | TBD | TBD | 🔜 Planned |
-| AC-08 | TBD | TBD | 🔜 Planned |
-| AC-09 | TBD | TBD | 🔜 Planned |
+| AC-01 | `src/lib/schema-serializer.test.ts` (round trip) + E2E deferred | `src/components/admin/form-builder/FormBuilder.tsx`, `FieldList.tsx` (@dnd-kit/sortable) | ✅ Implemented |
+| AC-02 | E2E deferred (needs running backend) | `FormBuilder.tsx` (`useMemo` serialize on every `fields` change) → `FormPreview.tsx` | ✅ Implemented |
+| AC-03 | `src/lib/schema-serializer.test.ts` | `src/lib/schema-serializer.ts` (`serializeToJsonSchema`) + server-side validation | ✅ Implemented |
+| AC-04 | `src/lib/schema-serializer.test.ts` (round trip) | `src/components/booking/CheckoutForm.tsx` renders the same schema | ✅ Implemented |
+| AC-05 | `src/lib/schema-serializer.test.ts` (`toCamelCase`) | `src/lib/schema-serializer.ts`, key shown live in `FieldCard.tsx` | ✅ Tested |
+| AC-06 | `src/lib/schema-serializer.test.ts` (select enum) | `src/components/admin/form-builder/EnumOptionsEditor.tsx` | ✅ Implemented |
+| AC-07 | `src/lib/schema-serializer.test.ts` (required array) | `src/lib/schema-serializer.ts` (`required: fields.filter(…)`) | ✅ Tested |
+| AC-08 | Grep audit (no tenantId in any form) | `src/lib/admin-actions.ts` (`saveIntakeSchema` + `requireAdminSession`) | ✅ Implemented |
+| AC-09 | Grep audit (no industry terms) | Entire `src/components/admin/form-builder/` package | ✅ Verified |
 
 <!-- AC validation passed: YYYY-MM-DD, 9 criteria rewritten, 9 marked TBD -->
 
@@ -333,4 +333,13 @@ async function saveSchema(serviceTypeId: string, schema: JsonSchema) {
 
 ---
 
-*Last updated: 2026-06-18 | Feature: admin-ui | Phase: 2*
+## Implementation Notes (2026-07-20)
+
+- Builder page lives at `src/app/admin/forms/[serviceTypeId]/page.tsx` (under the literal `/admin` prefix — see ATOM-UI-015 notes).
+- `schema-serializer.ts` additionally exposes `fieldDefFromBuilder`, `schemaToBuilderFields` (load an existing schema back into the builder), and `buildUiSchema` (maps `format: textarea` → `ui:widget`, `examples[0]` → `ui:placeholder`) — all pure and covered by 15 Vitest unit tests (`pnpm test` in `apps/web`).
+- Save is blocked client-side for empty labels, empty select option lists, and duplicate generated keys; the backend still validates draft-07 on save.
+- Dependencies added to `apps/web`: `@rjsf/core`, `@rjsf/utils`, `@rjsf/validator-ajv8`, `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`, `vitest` (dev).
+
+---
+
+*Last updated: 2026-07-20 | Feature: admin-ui | Phase: 2*

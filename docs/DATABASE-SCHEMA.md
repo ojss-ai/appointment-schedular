@@ -264,8 +264,10 @@ CREATE INDEX idx_bookings_extension
 ---
 
 ### 2.11 `outbox`
+> **Implemented as `V012__create_outbox.sql`** — V011 was consumed by
+> `add_booking_confirmation_code` in Phase 2; DDL below is unchanged.
 ```sql
--- V011__create_outbox.sql
+-- V011__create_outbox.sql (actual file: V012)
 CREATE TABLE outbox (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id       UUID         NOT NULL,
@@ -286,8 +288,9 @@ CREATE INDEX idx_outbox_aggregate ON outbox(aggregate_id);
 ---
 
 ### 2.12 `processed_events`
+> **Implemented as `V013__create_processed_events.sql`** (renumbered, see 2.11).
 ```sql
--- V012__create_processed_events.sql
+-- V012__create_processed_events.sql (actual file: V013)
 -- Idempotency table for Kafka consumers (NFR-2.1)
 CREATE TABLE processed_events (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -305,8 +308,9 @@ CREATE INDEX idx_processed_events_key ON processed_events(consumer_group, messag
 ---
 
 ### 2.13 `audit_log`
+> **Implemented as `V014__create_audit_log.sql`** (renumbered, see 2.11).
 ```sql
--- V013__create_audit_log.sql
+-- V013__create_audit_log.sql (actual file: V014)
 -- Append-only; rows are NEVER updated or deleted (HIPAA requirement)
 CREATE TABLE audit_log (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

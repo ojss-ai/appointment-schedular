@@ -1,0 +1,32 @@
+# Node
+node_modules/
+.next/
+dist/
+.pnpm-store/
+.turbo/
+
+# Java
+target/
+*.class
+*.jar
+!*-SNAPSHOT.jar
+
+# Environment / secrets
+.env.local
+.env.*.local
+*.env
+!.env.local.example
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

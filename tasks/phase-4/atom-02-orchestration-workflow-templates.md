@@ -4,7 +4,7 @@ description: Atom design document for orchestration workflow template files
 
 # ATOM-ORCHESTRATION-002: Reusable Orchestration Workflow Templates
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete (2026-07-20 — 4 new templates added alongside the 4 existing Phase-1 workflows; all agent labels validated against .claude/agents/ roster)
 **Feature**: orchestration-workflow-templates
 **Phase**: 4 (Intelligence)
 **Tags**: [ORCHESTRATION]

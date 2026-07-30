@@ -1,6 +1,6 @@
 # ATOM-BOOKING-012: HoldGcScheduler — Expired Hold Cleanup
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete
 **Feature**: booking-engine
 **Phase**: 2 (Core)
 **Tags**: [CONCURRENCY]

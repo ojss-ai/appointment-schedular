@@ -50,3 +50,54 @@ After every coder agent task:
 - ADR status must be updated in the file header whenever the decision changes.
 - Never delete an ADR — supersede it and update the old one's status.
 - API-SPEC entries must include: method, path, request body schema, response schema, required JWT claims, and tenant isolation note.
+
+## Auto-Generated ADR Stubs (ATOM-ADR-005)
+
+When `/adr-check` (or the PostToolUse architectural-change hook) detects a
+trigger from the Project-Specific Triggers section of
+`.claude/commands/adr-check.md`:
+
+1. Check the Existing ADR Cross-Reference table first — never duplicate a
+   stub for a pattern already governed by ADR-001 … ADR-005; report
+   "Covered by ADR-{NNN}" instead.
+2. Determine the next ADR number: max existing number in `docs/ADR/` + 1.
+3. Write the stub using the template below. Status MUST be `Proposed` —
+   never write `Accepted` automatically; only a human promotes the status.
+4. After writing each stub, print exactly:
+   `⚠ ADR stub created: docs/ADR/ADR-{NNN}-{description}.md — review and change status to Accepted before merging`
+5. When no triggers match, print exactly:
+   `ADR check complete — 0 new ADRs needed`
+
+### Auto-stub template
+
+```markdown
+# ADR-{NNN}: [{Short title describing the decision}]
+
+**Date:** {YYYY-MM-DD}
+**Status:** Proposed
+**Deciders:** adr-docs agent (human review required before Accepted)
+
+## Context
+
+{Brief description of what changed and why an ADR is needed.}
+A new `{trigger pattern}` was detected in `{FileName}.java`.
+This introduces {brief description of the new component or change}.
+
+## Decision
+
+[Human to fill in: what was decided and why]
+
+## Consequences
+
+**Positive:**
+- [Human to fill in]
+
+**Negative / Trade-offs:**
+- [Human to fill in]
+
+## Alternatives Considered
+
+| Option | Reason rejected |
+|--------|-----------------|
+| [alternative] | [reason] |
+```

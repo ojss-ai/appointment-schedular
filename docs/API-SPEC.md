@@ -367,7 +367,43 @@ Get single booking detail.
 
 ---
 
-## 8. Health & Meta
+## 8. Admin — Analytics Endpoints
+
+### GET `/tenants/{tenantId}/analytics/slot-optimization`
+
+**Auth:** JWT — `admin` authority + tenant guard (`403 TENANT_MISMATCH` /
+`403 INSUFFICIENT_ROLE` otherwise)
+**Source:** ATOM-ANALYTICS-003. Reads nightly-aggregated booking pattern
+memory files, applies utilization heuristics, and (when
+`app.ai.slot-optimization.enabled=true` and `ANTHROPIC_API_KEY` is set)
+rephrases them via the Claude API (`claude-haiku-4-5`). Falls back to
+heuristic-only suggestions when the AI integration is disabled or fails —
+never a 500. Result cached in Redis for 24h (key `slot-opt:{tenantId}`).
+
+**Response 200:**
+```json
+{
+  "suggestions": [
+    {
+      "resourceId": "0b0e8a3c-3f8e-4a7e-9f2b-1c9d1a2b3c4d",
+      "suggestion": "EXTEND_HOURS",
+      "details": "Monday 09:00 runs at 95% utilization; consider opening at 08:00.",
+      "confidence": 0.82,
+      "dataPoints": 14
+    }
+  ],
+  "message": null
+}
+```
+
+**Response 200 (insufficient data — fewer than 7 ingested dates):**
+```json
+{ "suggestions": [], "message": "Insufficient data (< 7 days)" }
+```
+
+---
+
+## 9. Health & Meta
 
 ### GET `/health`
 **Auth:** None
@@ -378,7 +414,7 @@ Get single booking detail.
 
 ---
 
-## 9. Error Code Reference
+## 10. Error Code Reference
 
 | Code | HTTP | Meaning |
 |---|---|---|

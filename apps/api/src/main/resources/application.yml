@@ -1,0 +1,122 @@
+spring:
+  application:
+    name: scheduler-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/scheduler}
+    username: ${DB_USER:scheduler}
+    password: ${DB_PASSWORD:scheduler_dev}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+    redis:
+      time-to-live: 5m
+      cache-null-values: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    properties:
+      schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+    # Producer settings per docs/KAFKA-SPEC.md section 7 (ATOM-KAFKA-004).
+    # Business events are relayed by Debezium from the outbox table (ADR-003);
+    # this producer exists for tooling/tests — never called from business
+    # transactions.
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiry-hours: ${JWT_EXPIRY_HOURS:24}
+  security:
+    # ATOM-SEC-504 hardening knobs.
+    cors:
+      # Comma-separated browser origin allow-list. Empty = deny all cross-origin
+      # (same-origin / server-to-server only). Set per environment, never '*'.
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+    rate-limit:
+      # Redis fixed-window limiter (SECURITY-SPEC 4.1). Disable only in tests.
+      enabled: ${RATE_LIMIT_ENABLED:true}
+  dispatch:
+    ses-from-address: ${SES_FROM_ADDRESS:no-reply@scheduler.local}
+    twilio-from-number: ${TWILIO_FROM_NUMBER:+15005550006}
+  # AWS credentials come from environment: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
+  # Twilio credentials: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+  memory:
+    # Flat-file analytics memory namespace (ATOM-ANALYTICS-001/-003/-004)
+    booking-patterns-path: ${BOOKING_PATTERNS_PATH:docs/memory/booking-patterns}
+  cache:
+    warmup:
+      # ATOM-PERF-503 — conditional remediation. OFF by default; enable ONLY if
+      # ATOM-PERF-501 reports slot availability p99 > 250ms, then re-run the
+      # load test to confirm p99 < 300ms. When false the CacheWarmUpService
+      # bean is not created (zero startup impact).
+      enabled: ${CACHE_WARMUP_ENABLED:false}
+  analytics:
+    # Utilization denominator: assumed bookable slots per resource-hour
+    # (slots are never stored — ADR-001; 4 = 15-minute granularity)
+    assumed-slots-per-hour: ${ANALYTICS_SLOTS_PER_HOUR:4}
+  ai:
+    slot-optimization:
+      # Feature flag for the Claude API integration (ATOM-ANALYTICS-003).
+      # OFF by default: the app runs without Anthropic credentials and the
+      # endpoint serves heuristic-only suggestions.
+      enabled: ${AI_SLOT_OPTIMIZATION_ENABLED:false}
+    anthropic:
+      base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com}
+      model: claude-haiku-4-5
+      # API key comes from the ANTHROPIC_API_KEY environment variable ONLY —
+      # never hardcode or commit it (ATOM-ANALYTICS-003 AC-05).
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      # ATOM-INFRA-508 — application label on every metric for Grafana/Prometheus.
+      application: scheduler-api
+    distribution:
+      # Publish native histogram buckets so PromQL histogram_quantile() works
+      # for the SlotCalcHighLatency alert (scheduling.slot.calc.duration).
+      percentiles-histogram:
+        scheduling.slot.calc.duration: true
+        http.server.requests: true
+      slo:
+        scheduling.slot.calc.duration: 50ms,100ms,150ms,200ms,250ms,300ms
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    console: '{"time":"%d{ISO8601}","level":"%p","logger":"%logger{36}","msg":"%replace(%msg){''"'',''\\"''}","tenant":"%X{tenantId}"}%n'

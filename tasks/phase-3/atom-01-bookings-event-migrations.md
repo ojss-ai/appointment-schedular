@@ -4,7 +4,7 @@ description: Flyway migrations V010–V013 creating bookings, outbox, processed_
 
 # ATOM-KAFKA-001: Bookings and Event-Related Flyway Migrations
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete
 **Feature**: kafka-event-mesh
 **Phase**: 3 (Kafka)
 **Tags**: [MIGRATION]

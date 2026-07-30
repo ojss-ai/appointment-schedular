@@ -4,7 +4,7 @@ description: Wire OutboxService.writeBookingEvent() into BookingService.confirmB
 
 # ATOM-KAFKA-006: Integrate Outbox Write into BookingService
 
-**Status**: 🟡 Planned
+**Status**: ✅ Complete
 **Feature**: kafka-event-mesh
 **Phase**: 3 (Kafka)
 **Tags**: [KAFKA]
